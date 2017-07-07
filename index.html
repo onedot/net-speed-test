@@ -1,0 +1,82 @@
+<html>
+  <head>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+    <script>
+      var app = angular.module("speedTest", []);
+      app.controller("mainController", function($scope, $http){
+        $scope.start = start;
+
+        function calcSpeed(data){
+          return data['size'] / (data['end'] - data['init']);
+        }
+
+        function data(size, t0, t){
+          return {
+            size: size,
+            init: t0,
+            end: t
+          }
+        }
+
+        function start(){
+          var lastSize;
+          var lastTime;
+          var datas = [];
+
+
+          $http.get('http://localhost/mega', {
+            eventHandlers: {
+              loadstart: function(e) {
+                lastSize = 0;
+                lastTime = new Date().getTime();
+              },
+              progress: function(e) {
+                let loaded = e.loaded;
+                let size = loaded - lastSize;
+                lastSize = loaded;
+
+                let time = new Date().getTime();
+
+                let d = data(size, lastTime, time);
+                lastTime = time;
+
+                datas.push(d);
+              },
+              loadend: function(e) {
+                let loaded = e.loaded;
+                let size = loaded - lastSize;
+                lastSize = loaded;
+
+                let time = new Date().getTime();
+
+                let d = data(size, lastTime, time);
+                lastTime = time;
+
+                datas.push(d);
+              }
+            },
+            responseType: 'arraybuffer'
+          }).then(function result(response){
+          });
+        }
+      });
+    </script>
+  </head>
+  <body ng-app="speedTest" ng-controller="mainController">
+    <table>
+      <tr ng-repeat="data in datas">
+        <td>
+          {{data.init}}
+        </td>
+        <td>
+          {{data.end}}
+        </td>
+        <td>
+          {{data.size}}
+        </td>
+      </tr>
+    </table>
+    <button ng-click="start()">Start</button>
+
+  </body>
+</html>
