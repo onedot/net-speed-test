@@ -6,25 +6,24 @@
       app.controller("mainController", function($scope, $http){
         $scope.start = start;
 
-        function calcSpeed(data){
-          return data['size'] / (data['end'] - data['init']);
-        }
-
         function data(size, t0, t){
           return {
             size: size,
             init: t0,
-            end: t
+            end: t,
+            get speed(){
+              return this['size'] / (this['end'] - this['init']);
+            }
           }
         }
 
         function start(){
           var lastSize;
           var lastTime;
-          var datas = [];
+          $scope.datas = [];
 
 
-          $http.get('http://localhost/mega', {
+          $http.get('test-files/giga', {
             eventHandlers: {
               loadstart: function(e) {
                 lastSize = 0;
@@ -40,7 +39,7 @@
                 let d = data(size, lastTime, time);
                 lastTime = time;
 
-                datas.push(d);
+                $scope.datas.push(d);
               },
               loadend: function(e) {
                 let loaded = e.loaded;
@@ -52,7 +51,7 @@
                 let d = data(size, lastTime, time);
                 lastTime = time;
 
-                datas.push(d);
+                $scope.datas.push(d);
               }
             },
             responseType: 'arraybuffer'
@@ -63,20 +62,25 @@
     </script>
   </head>
   <body ng-app="speedTest" ng-controller="mainController">
-    <table>
-      <tr ng-repeat="data in datas">
-        <td>
-          {{data.init}}
-        </td>
-        <td>
-          {{data.end}}
-        </td>
-        <td>
-          {{data.size}}
-        </td>
-      </tr>
-    </table>
     <button ng-click="start()">Start</button>
+    <table>
+      <tbody>
+        <tr ng-repeat="data in datas">
+          <td>
+            {{data.init}}
+          </td>
+          <td>
+            {{data.end}}
+          </td>
+          <td>
+            {{data.size | number }}
+          </td>
+          <td>
+            {{data.speed | number }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
 
   </body>
 </html>
