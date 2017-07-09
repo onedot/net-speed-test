@@ -1,8 +1,37 @@
 <html>
   <head>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
     <script>
       var app = angular.module("speedTest", []);
+
+      app.filter('networkSpeed', function(){
+        return function(rawSpeed){
+          let speed = {
+            value: -1,
+            unit: ''
+          };
+
+          if (typeof(rawSpeed) == 'undefined')
+            return 0;
+
+
+          if(rawSpeed > 1024) {
+            if(rawSpeed > (1024 * 1024)){
+              speed.value = (rawSpeed / (1024 * 1024));
+              speed.unit = "MB/s";
+            }
+            else {
+              speed.value = (rawSpeed / 1024);
+              speed.unit = "KB/s";
+            }
+          } else {
+            speed.value = rawSpeed;
+            speed.unit = "B/s";
+          }
+          return speed.value.toFixed(2) + " " + speed.unit;
+        }
+      });
       app.controller("mainController", function($scope, $http){
         $scope.start = start;
 
@@ -12,75 +41,96 @@
             init: t0,
             end: t,
             get speed(){
-              return this['size'] / (this['end'] - this['init']);
+              return this['size'] / ((this['end'] - this['init'])/1000);
             }
           }
         }
 
         function start(){
-          var lastSize;
-          var lastTime;
           $scope.datas = [];
 
+          $scope.media = {
+            total: 0,
+            count: 0,
+            get calc(){
+              if(this.count == 0)
+                return 0;
+              else
+                return this.total / this.count;
+            }
+          }
 
-          $http.get('test-files/giga', {
-            eventHandlers: {
-              loadstart: function(e) {
-                lastSize = 0;
-                lastTime = new Date().getTime();
+          var sizes = ["kilo", "mega", "giga"];
+          sizes.forEach(function(val){
+          //   console.log(val);
+            var lastSize;
+            var lastTime;
+
+
+            $http.get('test-files/' + val, {
+              eventHandlers: {
+                loadstart: function(e) {
+                  lastSize = 0;
+                  lastTime = new Date().getTime();
+                },
+                progress: function(e) {
+                  let loaded = e.loaded;
+                  let size = loaded - lastSize;
+                  lastSize = loaded;
+
+                  let time = new Date().getTime();
+
+                  let d = data(size, lastTime, time);
+                  lastTime = time;
+
+                  $scope.media.total += d.speed;
+                  $scope.media.count++;
+
+                  $scope.datas.push(d);
+                },
+                loadend: function(e) {
+                }
               },
-              progress: function(e) {
-                let loaded = e.loaded;
-                let size = loaded - lastSize;
-                lastSize = loaded;
-
-                let time = new Date().getTime();
-
-                let d = data(size, lastTime, time);
-                lastTime = time;
-
-                $scope.datas.push(d);
-              },
-              loadend: function(e) {
-                let loaded = e.loaded;
-                let size = loaded - lastSize;
-                lastSize = loaded;
-
-                let time = new Date().getTime();
-
-                let d = data(size, lastTime, time);
-                lastTime = time;
-
-                $scope.datas.push(d);
-              }
-            },
-            responseType: 'arraybuffer'
-          }).then(function result(response){
+              responseType: 'arraybuffer'
+            });
           });
         }
       });
     </script>
   </head>
   <body ng-app="speedTest" ng-controller="mainController">
-    <button ng-click="start()">Start</button>
-    <table>
-      <tbody>
-        <tr ng-repeat="data in datas">
-          <td>
-            {{data.init}}
-          </td>
-          <td>
-            {{data.end}}
-          </td>
-          <td>
-            {{data.size | number }}
-          </td>
-          <td>
-            {{data.speed | number }}
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="container">
+      <div class="jumbotron">
+        <h1>{{ media.calc | networkSpeed }}</h1>
+        <button class="button" ng-click="start()">Start</button>
+      </div>
+      <table class="table table-bordered table-striped">
+        <thead>
+          <tr>
+            <td>Init time</td>
+            <td>End time</td>
+            <td>Block size</td>
+            <td>Speed</td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr ng-repeat="data in datas">
+            <td>
+              {{ data.init}}
+            </td>
+            <td>
+              {{ data.end}}
+            </td>
+            <td>
+              {{ data.size | number }}
+            </td>
+            <td>
+              {{ data.speed | networkSpeed }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
   </body>
 </html>
