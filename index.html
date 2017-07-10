@@ -68,6 +68,7 @@
           }
 
           var sizes = ["kilo", "mega", "giga"];
+
           sizes = ["kilo", "mega"]; // Modification for git repository
           for(let i = 0; i < 10; i++) // Modification for git repository
           sizes.forEach(function(val){
@@ -112,7 +113,7 @@
       <div class="jumbotron">
         <svg viewBox="0 0 100 50">
           <path d="M 50,50 m -47,0 a 47,47 0 1 1 94,0" stroke="#eee" stroke-width="1" fill-opacity="0"></path>
-          <path d="M 50,50 m -47,0 a 47,47 0 1 1 94,0" stroke="rgb(237,106,90)" stroke-width="6" fill-opacity="0" style="stroke-dasharray: {{ 148*(media.calc / (1024*1024*255)) | zeroIfNaN }}, 148; stroke-dashoffset: 0;"></path>
+          <path d="M 50,50 m -47,0 a 47,47 0 1 1 94,0" stroke="rgb(237,106,90)" stroke-width="6" fill-opacity="0" style="stroke-dasharray: {{ 148*(media.calc / (1024*1024*128)) | zeroIfNaN }}, 148; stroke-dashoffset: 0;"></path>
         </svg>
         <h1>{{ media.calc | networkSpeed }}</h1>
         <button class="button" ng-click="start()">Start</button>
