@@ -15,7 +15,7 @@
           if (typeof(rawSpeed) == 'undefined')
             return 0;
 
-
+          // TODO ¿Change to bps?
           if(rawSpeed > 1024) {
             if(rawSpeed > (1024 * 1024)){
               speed.value = (rawSpeed / (1024 * 1024));
