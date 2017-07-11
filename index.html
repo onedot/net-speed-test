@@ -15,7 +15,7 @@
           if (typeof(rawSpeed) == 'undefined')
             return 0;
 
-
+          // TODO ¿Change to bps?
           if(rawSpeed > 1024) {
             if(rawSpeed > (1024 * 1024)){
               speed.value = (rawSpeed / (1024 * 1024));
@@ -67,15 +67,13 @@
             }
           }
 
-          var sizes = ["kilo", "mega", "giga"];
+          var sizes = ["kilo", "mega"];
+          for(let i = 0; i < 5; i++)
+              sizes.concat(sizes);
 
-          sizes = ["kilo", "mega"]; // Modification for git repository
-          for(let i = 0; i < 10; i++) // Modification for git repository
-          sizes.forEach(function(val){
-          //   console.log(val);
+          function test(val){
             var lastSize;
             var lastTime;
-
 
             $http.get('test-files/' + val, {
               eventHandlers: {
@@ -102,8 +100,16 @@
                 }
               },
               responseType: 'arraybuffer'
+            }).then(function(){
+                (function(nextVal){
+                    if(typeof(nextVal) == 'undefined')
+                        return;
+                    else
+                        test(nextVal);
+                })(sizes.pop())
             });
-          });
+          }
+          test(sizes.pop());
         }
       });
     </script>
