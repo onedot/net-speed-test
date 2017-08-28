@@ -1,0 +1,156 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+    <script>
+      var app = angular.module("speedTest", []);
+
+      app.filter('networkSpeed', function(){
+        return function(rawSpeed){
+          let speed = {
+            value: -1,
+            unit: ''
+          };
+
+          if (typeof(rawSpeed) == 'undefined')
+            return 0;
+
+          // TODO ¿Change to bps?
+          if(rawSpeed > 1024) {
+            if(rawSpeed > (1024 * 1024)){
+              speed.value = (rawSpeed / (1024 * 1024));
+              speed.unit = "MB/s";
+            }
+            else {
+              speed.value = (rawSpeed / 1024);
+              speed.unit = "KB/s";
+            }
+          } else {
+            speed.value = rawSpeed;
+            speed.unit = "B/s";
+          }
+          return speed.value.toFixed(2) + " " + speed.unit;
+        }
+      });
+
+      app.filter('zeroIfNaN', function(){
+        return function(val){
+          return isNaN(val)? 0 : val;
+        }
+      })
+
+      app.controller("mainController", function($scope, $http){
+        $scope.start = start;
+
+        function data(size, t0, t){
+          return {
+            size: size,
+            init: t0,
+            end: t,
+            get speed(){
+              return this['size'] / ((this['end'] - this['init'])/1000);
+            }
+          }
+        }
+
+        function start(){
+          $scope.datas = [];
+
+          $scope.media = {
+            total: 0,
+            count: 0,
+            get calc(){
+              if(this.count == 0)
+                return 0;
+              else
+                return this.total / this.count;
+            }
+          }
+
+          var sizes = ["kilo", "mega"];
+          for(let i = 0; i < 5; i++)
+              sizes.concat(sizes);
+
+          function test(val){
+            var lastSize;
+            var lastTime;
+
+            $http.get('test-files/' + val, {
+              eventHandlers: {
+                loadstart: function(e) {
+                  lastSize = 0;
+                  lastTime = new Date().getTime();
+                },
+                progress: function(e) {
+                  let loaded = e.loaded;
+                  let size = loaded - lastSize;
+                  lastSize = loaded;
+
+                  let time = new Date().getTime();
+
+                  let d = data(size, lastTime, time);
+                  lastTime = time;
+
+                  $scope.media.total += d.speed;
+                  $scope.media.count++;
+
+                  $scope.datas.push(d);
+                },
+                loadend: function(e) {
+                }
+              },
+              responseType: 'arraybuffer'
+            }).then(function(){
+                (function(nextVal){
+                    if(typeof(nextVal) == 'undefined')
+                        return;
+                    else
+                        test(nextVal);
+                })(sizes.pop())
+            });
+          }
+          test(sizes.pop());
+        }
+      });
+    </script>
+  </head>
+  <body ng-app="speedTest" ng-controller="mainController">
+    <div class="container">
+      <div class="jumbotron">
+        <svg viewBox="0 0 100 50">
+          <path d="M 50,50 m -47,0 a 47,47 0 1 1 94,0" stroke="#eee" stroke-width="1" fill-opacity="0"></path>
+          <path d="M 50,50 m -47,0 a 47,47 0 1 1 94,0" stroke="rgb(237,106,90)" stroke-width="6" fill-opacity="0" style="stroke-dasharray: {{ 148*(media.calc / (1024*1024*128)) | zeroIfNaN }}, 148; stroke-dashoffset: 0;"></path>
+        </svg>
+        <h1>{{ media.calc | networkSpeed }}</h1>
+        <button class="button" ng-click="start()">Start</button>
+      </div>
+      <table class="table table-bordered table-striped">
+        <thead>
+          <tr>
+            <td>Init time</td>
+            <td>End time</td>
+            <td>Block size</td>
+            <td>Speed</td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr ng-repeat="data in datas">
+            <td>
+              {{ data.init}}
+            </td>
+            <td>
+              {{ data.end}}
+            </td>
+            <td>
+              {{ data.size | number }}
+            </td>
+            <td>
+              {{ data.speed | networkSpeed }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </body>
+</html>
