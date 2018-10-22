@@ -123,7 +123,7 @@
           <path d="M 50,50 m -47,0 a 47,47 0 1 1 94,0" stroke="rgb(237,106,90)" stroke-width="6" fill-opacity="0" style="stroke-dasharray: {{ 148*(media.calc / (1024*1024*128)) | zeroIfNaN }}, 148; stroke-dashoffset: 0;"></path>
         </svg>
         <h1>{{ media.calc | networkSpeed }}</h1>
-        <button class="button" ng-click="start()">Start</button>
+        <button class="btn btn-primary btn-lg" ng-click="start()">测试</button>
       </div>
       <table class="table table-bordered table-striped">
         <thead>
