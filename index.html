@@ -75,7 +75,7 @@
             var lastSize;
             var lastTime;
 
-            $http.get('test-files/' + val, {
+            $http.get('test-files/' + val+'?timestamp=' + new Date().getTime(), {
               cache:false,
               eventHandlers: {
                 loadstart: function(e) {
